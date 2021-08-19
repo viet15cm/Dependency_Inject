@@ -197,6 +197,7 @@ namespace DependencyInjection
         public static IClassB CreatB2(IServiceProvider provider)
         {
             var b2 = new ClassB2(
+//                new ClassC()
                    provider.GetService<IClassC>(),
                    "thuc hien trong class B2"
                    );
@@ -262,10 +263,6 @@ namespace DependencyInjection
         */
         public static void ReadFileDependencyInject()
         {
-
-        }
-        static void Main(string[] args)
-        {
             //IConfigurationRoot configurationRoot;
             ConfigurationRoot configurationRoot;
             ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
@@ -275,7 +272,7 @@ namespace DependencyInjection
 
             var mySeviceOptions = configurationRoot.GetSection("MyServiceOptions");
 
-          
+
 
             var sevices = new ServiceCollection();
             // Đăng Ký Các Dịch vụ
@@ -286,6 +283,29 @@ namespace DependencyInjection
 
             var myservices = provider.GetService<MyServices>();
             myservices.printData();
+        }
+        static void Main(string[] args)
+        {
+            var services = new ServiceCollection();
+
+            services.AddScoped<ClassA, ClassA>();
+
+            services.AddScoped<IClassB, ClassB2>((provider) => {
+
+                var c = new ClassB2(
+                    // Viet bang hai cách
+                    //new ClassC(), 
+                    provider.GetService<IClassC>(),
+                    "Da injection B2"
+                    );
+                return c;
+            });
+            services.AddScoped<IClassC, ClassC>();
+
+            var provider = services.BuildServiceProvider();
+
+            ClassA a = provider.GetService<ClassA>();
+            a.ActionA();
         }
     }
 }
