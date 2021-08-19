@@ -1,0 +1,11 @@
+{
+  "section1": {
+    "key1": "value1",
+    "key2": 1123
+  },
+
+  "MyServiceOptions": {
+    "data1": "Xin Chao Viet IT",
+    "data2":  11111
+  }
+}
