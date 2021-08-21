@@ -1,0 +1,11 @@
+{
+  "TestOptions": {
+    "Key_1": " k1 viet",
+    "Key_2": {
+      "K1": "k2 viet",
+      "K2": "k2 nam"
+    }
+  }
+
+
+}

@@ -13,7 +13,7 @@ namespace DependencyInjection
 
         private Singleton() { }
 
-        public static  Singleton GetSigleton()
+        public static Singleton GetSigleton()
         {
             _intance = _intance ?? new Singleton();
 
@@ -31,7 +31,7 @@ namespace DependencyInjection
         public void ActionC();
     }
 
-     class ClassC : IClassC
+    class ClassC : IClassC
     {
         public ClassC() => Console.WriteLine("ClassC is created");
         public void ActionC() => Console.WriteLine("Action in ClassC");
@@ -109,7 +109,7 @@ namespace DependencyInjection
     public class Horn
     {
         int lever = 0;
-        public Horn (int lever)
+        public Horn(int lever)
         {
             this.lever = lever;
         }
@@ -124,23 +124,42 @@ namespace DependencyInjection
         }
         public void Beep()
         {
-            
+
             horn.Beep();
         }
+    }
+
+    public class MysevicesOptions
+    {
+        public string Data1 { get; set; }
+        public int Data2 { get; set; }
+    }
+    public  class MyServices
+    {
+
+        public MyServices(IOptions<MysevicesOptions> options)
+        {
+            var _options = options.Value;
+            Data1 = _options.Data1;
+            Data2 = _options.Data2;
+        }
+        public string Data1 { get; set; }
+        public int Data2 { get; set; }
+        public void printData() => Console.WriteLine($"{Data1}/{Data2}");
     }
     class Program
     {
 
-        static void Demo()
+        public static void DependencyInject()
         {
-            
-           var car = new Car(new Horn(1));
-           car.Beep();
 
-           IClassC IC = new ClassC();
-           IClassB IB = new ClassB(IC);
-           ClassA CA = new ClassA(IB);
-           CA.ActionA();
+            var car = new Car(new Horn(1));
+            car.Beep();
+
+            IClassC IC = new ClassC();
+            IClassB IB = new ClassB(IC);
+            ClassA CA = new ClassA(IB);
+            CA.ActionA();
 
             var sevices = new ServiceCollection();
             // dang ki cac dich vu...
@@ -149,14 +168,14 @@ namespace DependencyInjection
             sevices.AddScoped<IClassC, ClassC>();
             // dagn ki xong
             var providder = sevices.BuildServiceProvider();
-            
+
             // lay ra cac doi tuong da dang ky
             for (int i = 0; i < 5; i++)
             {
                 var a = providder.GetService<IClassC>();
-             
+
                 Console.WriteLine(a.GetHashCode());
-                
+
             }
             using (var c = providder.CreateScope())
             {
@@ -169,10 +188,10 @@ namespace DependencyInjection
 
                 }
             }
-            
+
         }
 
-       // Degetegate Factory
+        // Degetegate Factory
         static void DelegteFactory()
         {
             var services = new ServiceCollection();
@@ -182,6 +201,8 @@ namespace DependencyInjection
             services.AddScoped<IClassB, ClassB2>((provider) => {
 
                 var c = new ClassB2(
+                    // Viet bang hai cách
+                    //new ClassC(),
                     provider.GetService<IClassC>(),
                     "Da injection B2"
                     );
@@ -197,7 +218,7 @@ namespace DependencyInjection
         public static IClassB CreatB2(IServiceProvider provider)
         {
             var b2 = new ClassB2(
-//                new ClassC()
+                   //                new ClassC()
                    provider.GetService<IClassC>(),
                    "thuc hien trong class B2"
                    );
@@ -205,36 +226,14 @@ namespace DependencyInjection
             return b2;
 
         }
-
         // OptionInject
-        public class MyServices
-        {
-
-            public MyServices(IOptions<MysevicesOption> options)
-            {
-                var _options = options.Value;
-                Data1 = _options.Data1;
-                Data2 = _options.Data2;
-            }
-            public string Data1 { get; set; }
-            public int Data2 { get; set; }
-            public void printData() => Console.WriteLine($"{Data1}/{Data2}");
-        }
-
-        public class MysevicesOption
-        {
-            public string Data1 { get; set; }
-            public int Data2 { get; set; }
-        }
-       
-
         public static void OptionInject()
         {
             var sevices = new ServiceCollection();
             // Đăng Ký Các Dịch vụ
             sevices.AddSingleton<MyServices>();
             //Đăng Ký Option.
-            sevices.Configure<MysevicesOption>((options) => {
+            sevices.Configure<MysevicesOptions>((options) => {
 
                 options.Data1 = "Viet";
                 options.Data2 = 23;
@@ -261,51 +260,146 @@ namespace DependencyInjection
          dotnet add package Microsoft.Extensions.Configuration.Ini
          dotnet add package Microsoft.Extensions.Configuration.Xml
         */
+
         public static void ReadFileDependencyInject()
         {
             //IConfigurationRoot configurationRoot;
-            ConfigurationRoot configurationRoot;
-            ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
+            IConfiguration configurationRoot;
+            IConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
             configurationBuilder.SetBasePath(Directory.GetCurrentDirectory());
-            configurationBuilder.AddJsonFile("CauHinh.json");
-            configurationRoot = (ConfigurationRoot)configurationBuilder.Build();
+            configurationBuilder.AddJsonFile("CauHinh2.json");
+            configurationRoot = configurationBuilder.Build();
 
-            var mySeviceOptions = configurationRoot.GetSection("MyServiceOptions");
+            var testOptions = configurationRoot.GetSection("TestOptions");
 
 
 
             var sevices = new ServiceCollection();
-            // Đăng Ký Các Dịch vụ
-            sevices.AddSingleton<MyServices>();
+            //Đăng Ký Các Dịch vụ
+           // sevices.AddSingleton<MyServices>();
             //Đăng Ký Option.
-            sevices.Configure<MysevicesOption>(mySeviceOptions);
+            sevices.Configure<TestOptions>(testOptions);
             var provider = sevices.BuildServiceProvider();
 
-            var myservices = provider.GetService<MyServices>();
-            myservices.printData();
+            var myservices = provider.GetService<IOptions<TestOptions>>().Value;
+            Console.WriteLine(myservices.Key_2.K1);
+        }
+
+        // setting File starup demo
+        public static void Starup()
+        {
+            IServiceCollection services = new ServiceCollection();
+            services.AddSingleton<Starup, Starup>((provider) => {
+                IConfiguration configurationRoot;
+                IConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
+                configurationBuilder.SetBasePath(Directory.GetCurrentDirectory());
+                configurationBuilder.AddJsonFile("CauHinh2.json");
+                configurationRoot = configurationBuilder.Build();
+
+                var c = new Starup(configurationRoot);
+
+                return c;
+            });
+            services.AddSingleton<IConfiguration, ConfigurationRoot>();
+
+            IServiceProvider provider = services.BuildServiceProvider();
+
+            Starup starup = provider.GetService<Starup>();
+
+            starup.ConfigurationSevices(services);
+            starup.Display(services);
+        }
+
+        public class ClassBB
+        {
+            public ClassBB() => Console.WriteLine("Da Khoi tao ClassBB");
+
+            public void ActionBB()
+            {
+                Console.WriteLine("Action BB");
+            }
+        }
+
+        public class ClassCC
+        {
+            public ClassCC() => Console.WriteLine("Da Khoi tao ClassCC");
+            public void ActionCC()
+            {
+                Console.WriteLine("Action CC");
+            }
+        }
+
+        public class ClassAA
+        {
+            public readonly ClassBB _classBB;
+
+            public readonly ClassCC _classCC;
+
+            public ClassAA(ClassBB classBB , ClassCC classCC)
+            {
+                _classBB = classBB;
+                _classCC = classCC;
+            }
+
+            public void Action()
+            {
+                _classBB.ActionBB();
+                _classCC.ActionCC();
+                Console.WriteLine("Action AA");
+            }
         }
         static void Main(string[] args)
         {
-            var services = new ServiceCollection();
+            IServiceCollection serviceDescriptors = new ServiceCollection();
+            serviceDescriptors.AddSingleton<ClassAA, ClassAA>();
+            serviceDescriptors.AddSingleton<ClassBB, ClassBB>();
+            serviceDescriptors.AddSingleton<ClassCC, ClassCC>();
+            IServiceProvider provider = serviceDescriptors.BuildServiceProvider();
 
-            services.AddScoped<ClassA, ClassA>();
-
-            services.AddScoped<IClassB, ClassB2>((provider) => {
-
-                var c = new ClassB2(
-                    // Viet bang hai cách
-                    //new ClassC(), 
-                    provider.GetService<IClassC>(),
-                    "Da injection B2"
-                    );
-                return c;
-            });
-            services.AddScoped<IClassC, ClassC>();
-
-            var provider = services.BuildServiceProvider();
-
-            ClassA a = provider.GetService<ClassA>();
-            a.ActionA();
+            var c = provider.GetService<ClassAA>();
+            c.Action();
         }
     }
+
+    // khoi tao file starup
+    class Starup
+    {
+
+        private readonly IConfiguration _configuration;
+        public IServiceProvider _serviceProvider { set; get; }
+        public Starup(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
+        public void ConfigurationSevices(IServiceCollection services)
+        {
+            var options = _configuration.GetSection("TestOptions");
+            services.Configure<TestOptions>(options);
+            _serviceProvider = services.BuildServiceProvider();
+        }
+
+        public void Display(IServiceCollection services)
+        {
+            var pr = _serviceProvider.GetService<IOptions<TestOptions>>().Value;
+            Console.WriteLine(pr.Key_2.K2);
+        }
+
+    }
+    class TestOptions
+    {
+        public string Key_1 { get; set; }
+        public SubTestOptions Key_2 { get; set; }
+
+    }
+
+    class SubTestOptions
+    {
+        public string K1 { get; set; }
+        public string K2 { get; set; }
+    }
+
+    
+
+    
 }
